@@ -133,6 +133,36 @@ SPI Interface 8 bits to form 1 LED clock cycle for bit value 1:
 seems to accept the lower durations on the low level of the clock cycle.
 
 
+## Circuit
+
+The circuit starts with the Pi Pico with a reset button and adds the 8 LED 
+NeoPixel stick and some 22pf capacitors to smooth out ringing on the data 
+signal.
+![Pi Pico SPI to NeoPixel circuit](./pi-pico-c-neopixel.png)
+In the neopixel.h header file you will find the SPI0 pin assignments where 
+GPIO 16 through 19 are assigned to the SPI0 interface. However, we only wire
+up the SPI0_MISO (TX) transmit line to the data in pin on the NeoPixel LED 
+strip.
+
+A 22pf capacitor is connected from the SPI0_MISO line to ground, and at the 
+data in pin on the NeoPixel LED strip a 22pf capacitor is connected between 
+data in and ground and another 22pf capacitor is connected between the data 
+in and the +5VCC pin.
+```c
+// spi0 GPIO pin assignments
+#define SPI0_CS 17
+#define SPI0_SCK 18
+#define SPI0_MOSI 19
+#define SPI0_MISO 16
+```
+
+To power the NeoPixel LED strip we run a +5V connection from the PI Pico 
+VBUS pin to the +5VCC pin on the LED strip.
+
+**NOTE:** Be careful with the +5V connection, the Pi Pico GPIO inputs operate at 3.3V and a 5V signal may cause damage.
+
+
+
 ## Build
 
 Assuming you already have a development environment setup as was used in the
