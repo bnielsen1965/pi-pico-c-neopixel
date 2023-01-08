@@ -10,10 +10,17 @@ int main() {
   init();  
 
   // infinite loop for core0
+  LEDPixel ledColors = { 32, 32, 32 };
   for(;;) {
-    rollingBit();
+    /*
+    setLEDColors(0, ledColors);
+    sleep_ms(1000);
+    clearLEDs();
+    sleep_ms(1000);
+    */
+    rollingBit(-1, 0);
     electricRain();
-    cylon();
+    cylon(-1, 0);
     randomizeColors();
   }
 
@@ -114,34 +121,82 @@ void clearLEDs() {
 }
 
 
-void rollingBit() {
-  int count = LED_COUNT * (2 + rand() % 2);
-  uint8_t bit = 0x1;
+void setLEDColors(int led, LEDPixel colors) {
+    // request blocking access to led buffer
+  mutex_enter_blocking(&ledBufferMutex);
+  // set LED colors
+  leds[led].G = colors.G;
+  leds[led].R = colors.R;
+  leds[led].B = colors.B;
+  // release blocking access to led buffer
+  mutex_exit(&ledBufferMutex);
+}
+
+
+void rollingBit(int setColor, int sleepMS) {
+  int sleep = sleepMS > 0 ? sleepMS : 1000;
+  int count = LED_COUNT * (2 + rand() % 2); // random number of times to cycle demo
+  uint8_t bit = 0x1; // register to hold the rolling bit
 
   clearLEDs();
   while (count--) {
     // request blocking access to led buffer
     mutex_enter_blocking(&ledBufferMutex);
     for (int loop = 0; loop < LED_COUNT; loop += 4) {
-      leds[loop].G = bit;
-      leds[loop + 1].R = bit;
-      leds[loop + 2].B = bit;
-      leds[loop + 3].R = bit;
-      leds[loop + 3].B = bit;
+      switch (setColor) {
+        case 0:
+          // set green bit on 4 pixels
+          leds[loop].G = bit;
+          leds[loop + 1].G = bit;
+          leds[loop + 2].G = bit;
+          leds[loop + 3].G = bit;
+          leds[loop + 3].G = bit;
+          break;
+
+        case 1:
+          // set red bit on 4 pixels
+          leds[loop].R = bit;
+          leds[loop + 1].R = bit;
+          leds[loop + 2].R = bit;
+          leds[loop + 3].R = bit;
+          leds[loop + 3].R = bit;
+          break;
+
+        case 2:
+          // set blue bit on 4 pixels
+          leds[loop].B = bit;
+          leds[loop + 1].B = bit;
+          leds[loop + 2].B = bit;
+          leds[loop + 3].B = bit;
+          leds[loop + 3].B = bit;
+          break;
+          
+        default:
+          // set color bit on 4 pixels
+          leds[loop].G = bit;
+          leds[loop + 1].R = bit;
+          leds[loop + 2].B = bit;
+          leds[loop + 3].R = bit;
+          leds[loop + 3].B = bit;
+          break;
+      }
     }
     // release blocking access to led buffer
     mutex_exit(&ledBufferMutex);
+    // shift bit left 1
     bit <<= 1;
+    // if bit shifted off 8 bit register then reset
     if (!bit) bit = 0x01;
-    sleep_ms(1000);
+    sleep_ms(sleep);
   }
   clearLEDs();
 }
 
 // cylon display demo
-void cylon() {
+void cylon(int setColor, int sleepMS) {
+  int color = setColor < 0 ? rand() % 3 : setColor; // random LED color
+  int sleep = sleepMS > 0 ? sleepMS : 100;
   int count = LED_COUNT * (10 + rand() % 10); // random number of times to cycle demo
-  int color = rand() % 3; // random LED color
   int offset = 0; // display offset counter
   int dir = 1; // direction offset moves
   // loop until demo cycle count ends
@@ -194,7 +249,7 @@ void cylon() {
     if (offset == LED_COUNT) dir = -1;
     if (offset == -1 * LED_COUNT) dir = 1;
     // delay before demo update
-    sleep_ms(100);
+    sleep_ms(sleep);
   }
   // clear demo from LED display
   clearLEDs();
